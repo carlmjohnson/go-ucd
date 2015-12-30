@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"errors"
+	"flag"
 	"io"
 	"io/ioutil"
 	"log"
@@ -121,6 +122,12 @@ var UCDHan = map[string]string{
 
 var packageTemplate = template.Must(template.New("package").Parse(templateString))
 
+var debug = flag.Bool("debug", false, "Enable to output to stdout instead of writing unihan.go")
+
+func init() {
+	flag.Parse()
+}
+
 func main() {
 	b, err := getUnihanFile()
 	if err != nil {
@@ -152,11 +159,16 @@ func main() {
 		Records:   records,
 	}
 
-	file, err := os.Create("unihan.go")
-	if err != nil {
-		log.Fatal(err)
+	var file io.WriteCloser
+
+	if *debug {
+		file = os.Stdout
+	} else {
+		if file, err = os.Create("unihan.go"); err != nil {
+			log.Fatal(err)
+		}
+		defer file.Close()
 	}
-	defer file.Close()
 
 	if err := packageTemplate.Execute(file, data); err != nil {
 		log.Fatal(err)

@@ -8,6 +8,7 @@ package main
 
 import (
 	"encoding/csv"
+	"flag"
 	"io"
 	"log"
 	"net/http"
@@ -74,6 +75,12 @@ var packageTemplate = template.Must(template.New("package").
 	Funcs(template.FuncMap{"isComment": isComment}).
 	Parse(templateString))
 
+var debug = flag.Bool("debug", false, "Enable to output to stdout instead of writing unicodedata.go")
+
+func init() {
+	flag.Parse()
+}
+
 func main() {
 	records := getUnicodeRecords()
 	data := struct {
@@ -86,11 +93,17 @@ func main() {
 		Records:   records,
 	}
 
-	file, err := os.Create("unicodedata.go")
-	if err != nil {
-		log.Fatal(err)
+	var file io.WriteCloser
+
+	if *debug {
+		file = os.Stdout
+	} else {
+		var err error
+		if file, err = os.Create("unicodedata.go"); err != nil {
+			log.Fatal(err)
+		}
+		defer file.Close()
 	}
-	defer file.Close()
 
 	if err := packageTemplate.Execute(file, data); err != nil {
 		log.Fatal(err)
