@@ -10,8 +10,8 @@ import (
 	"archive/zip"
 	"bytes"
 	"encoding/csv"
-	"errors"
 	"flag"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -24,55 +24,39 @@ import (
 
 const unihanURL = "http://unicode.org/Public/UCD/latest/ucd/Unihan.zip"
 
-func getUnihanFile() ([]byte, error) {
-	rsp, err := http.Get(unihanURL)
-	if err != nil {
-		return nil, err
-	}
+type NoFileError string
 
-	defer rsp.Body.Close()
-
-	body, err := ioutil.ReadAll(rsp.Body)
-	if err != nil {
-		return nil, err
-	}
-	return body, nil
+func (e NoFileError) Error() string {
+	return fmt.Sprintf("No file %q in the provided zip file.", string(e))
 }
 
-func getUnihanZipReader(b []byte) (*zip.Reader, error) {
-	reader, err := zip.NewReader(bytes.NewReader(b), int64(len(b)))
+// getFileFromZip takes a io.ReadCloser corresponding to a zip file and
+// the name of file inside of it, and returns a ReadCloser for that
+// inner file and closes the outer file. Returns a NoFileError if it
+// fails to find the file inside the zip or some other error if anything
+// else goes wrong.
+func getFileFromZip(src io.ReadCloser, filename string) (io.ReadCloser, error) {
+	data, err := ioutil.ReadAll(src)
+	if err != nil {
+		return nil, err
+	}
+	src.Close()
+
+	br := bytes.NewReader(data)
+	zipReader, err := zip.NewReader(br, br.Size())
 	if err != nil {
 		return nil, err
 	}
 
-	return reader, nil
-}
-
-var noFileError = errors.New("No file 'Unihan_Readings.txt' in the provided zip file.")
-
-func getUnihanReaderFromZip(reader *zip.Reader) (io.Reader, error) {
-	for _, zf := range reader.File {
-		if zf.Name != "Unihan_Readings.txt" {
+	for _, zf := range zipReader.File {
+		if zf.Name != filename {
 			continue
 		}
 
-		src, err := zf.Open()
-
-		if err != nil {
-			return nil, err
-		}
-
-		defer src.Close()
-
-		// Copying the file so we can go ahead and close the zip file
-		var buf bytes.Buffer
-
-		_, err = io.Copy(&buf, src)
-
-		return &buf, err
+		return zf.Open()
 	}
 
-	return nil, noFileError
+	return nil, NoFileError(filename)
 }
 
 type UnihanRecord struct {
@@ -129,22 +113,18 @@ func init() {
 }
 
 func main() {
-	b, err := getUnihanFile()
+	rsp, err := http.Get(unihanURL)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	zr, err := getUnihanZipReader(b)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	r, err := getUnihanReaderFromZip(zr)
+	r, err := getFileFromZip(rsp.Body, "Unihan_Readings.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	records, err := getUnihanRecords(r)
+	r.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
