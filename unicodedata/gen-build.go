@@ -105,7 +105,7 @@ func main() {
 		defer file.Close()
 	}
 
-	if err := packageTemplate.Execute(file, data); err != nil {
+	if err := packageTemplate.Execute(file, data); err != nil && file != os.Stdout {
 		log.Fatal(err)
 	}
 }
