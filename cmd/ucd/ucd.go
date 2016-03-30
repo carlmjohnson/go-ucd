@@ -2,14 +2,31 @@ package main
 
 import (
 	"bufio"
+	"bytes"
+	"flag"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/carlmjohnson/unicodechess/unicodedata"
 )
 
+var input io.Reader = os.Stdin
+
+func init() {
+	flag.Parse()
+	if flag.NArg() == 0 {
+		return
+	}
+	var buf bytes.Buffer
+	for _, s := range flag.Args() {
+		buf.WriteString(s)
+	}
+	input = &buf
+}
+
 func main() {
-	s := bufio.NewScanner(os.Stdin)
+	s := bufio.NewScanner(input)
 	s.Split(bufio.ScanRunes)
 
 	for s.Scan() {
