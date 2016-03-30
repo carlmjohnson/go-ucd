@@ -61,9 +61,9 @@ const templateString = `// go generate
 
 package unicodedata
 
-var UCD = map[string]string{
+var UCD = map[rune]string{
 {{ range .Records }}
-	{{ if isComment . }}// {{ end }}{{ printf "%q" .Codepoint }}: {{ printf "%q" .Name }},{{ end }}
+	{{ if isComment . }}// {{ end }}0x{{ .Codepoint }}: {{ printf "%q" .Name }},{{ end }}
 }
 `
 

@@ -98,9 +98,9 @@ const templateString = `// go generate
 
 package unihan
 
-var UCDHan = map[string]string{
+var UCDHan = map[rune]string{
 {{ range .Records }}
-	{{ printf "%q" .Codepoint }}: {{ printf "%q" .Definition }},{{ end }}
+	0x{{ .Codepoint }}: {{ printf "%q" .Definition }},{{ end }}
 }
 `
 
