@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cooperhewitt/go-ucd/unicodedata"
+	"github.com/carlmjohnson/unicodechess/unicodedata"
 )
 
 func main() {
