@@ -60,6 +60,6 @@ func byCodepoint(input string, base int) {
 }
 
 func print(r rune) {
-	name := unicodedata.UCD[r]
+	name := unicodedata.Rune(r)
 	fmt.Printf("0x%04X\t%s\t%s\n", r, string(r), name)
 }
