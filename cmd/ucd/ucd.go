@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/carlmjohnson/unicodechess/unicodedata"
+	"github.com/carlmjohnson/unicodechess/unihan"
 )
 
 func main() {
@@ -60,6 +61,9 @@ func byCodepoint(input string, base int) {
 }
 
 func print(r rune) {
-	name := unicodedata.Rune(r)
+	name := unicodedata.Rune(r).String()
+	if definition, ok := unihan.Definitions[r]; ok {
+		name = definition
+	}
 	fmt.Printf("0x%04X\t%s\t%s\n", r, string(r), name)
 }
