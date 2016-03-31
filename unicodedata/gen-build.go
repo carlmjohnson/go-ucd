@@ -63,17 +63,11 @@ package unicodedata
 
 var names = map[rune]string{
 {{ range .Records }}
-	{{ if isComment . }}// {{ end }}0x{{ .Codepoint }}: {{ printf "%q" .Name }},{{ end }}
+	0x{{ .Codepoint }}: {{ printf "%q" .Name }},{{ end }}
 }
 `
 
-func isComment(r UnicodeRecord) bool {
-	return r.Name[0] == '<' || r.Name[len(r.Name)-1] == '>'
-}
-
-var packageTemplate = template.Must(template.New("package").
-	Funcs(template.FuncMap{"isComment": isComment}).
-	Parse(templateString))
+var packageTemplate = template.Must(template.New("package").Parse(templateString))
 
 var debug = flag.Bool("debug", false, "Enable to output to stdout instead of writing unicodedata.go")
 

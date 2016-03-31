@@ -62,8 +62,18 @@ func byCodepoint(input string, base int) {
 
 func print(r rune) {
 	name := unicodedata.Rune(r).String()
+
 	if definition, ok := unihan.Definitions[r]; ok {
 		name = definition
 	}
-	fmt.Printf("0x%04X\t%s\t%s\n", r, string(r), name)
+
+	s := string(r)
+
+	if name == "<control>" {
+		replacementChar := rune(0xfffd)
+		s = string(replacementChar)
+	}
+
+	fmt.Printf("0x%04X\t%s\t%s\n", r, s, name)
+
 }
