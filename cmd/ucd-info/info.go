@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 	"text/template"
 	"unicode"
 
@@ -53,14 +52,45 @@ func print(r rune) {
 	})
 }
 
-func byCodepoint(input string, base int) {
-	input = strings.TrimPrefix(input, "0x")
+func inRange(r, start, end rune) bool {
+	return (r >= start) && (r <= end)
+}
+
+func normalizeInput(input string) string {
+	i, j := 0, 0
+
+	// Trim prefix
+	if len(input) >= 2 {
+		if prefix := input[:2]; prefix == "0x" || prefix == "0X" {
+			i, j = 2, 2
+		}
+	}
+
+	// Trim suffix
+	var r rune
+	for _, r = range input[i:] {
+		if inRange(r, '0', '9') || inRange(r, 'a', 'f') || inRange(r, 'A', 'F') {
+			j++
+			continue
+		}
+		break
+	}
+	return input[i:j]
+}
+
+func getRuneFromCodepoint(input string, base int) (r rune, err error) {
 	cp, err := strconv.ParseInt(input, base, 32)
 	if err != nil {
-		fmt.Printf("Could not process codepoint, base-%d: %v\n", base, err)
+		return 0, err
+	}
+	return rune(cp), nil
+}
+
+func die(err error, input string) {
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Could not process as codepoint:", input)
 		os.Exit(1)
 	}
-	print(rune(cp))
 }
 
 func main() {
@@ -74,13 +104,18 @@ func main() {
 
 	if flag.NArg() > 0 {
 		for _, arg := range flag.Args() {
-			byCodepoint(arg, base)
+			r, err := getRuneFromCodepoint(normalizeInput(arg), base)
+			die(err, arg)
+			print(r)
 		}
 	} else {
 		s := bufio.NewScanner(os.Stdin)
 
 		for s.Scan() {
-			byCodepoint(s.Text(), base)
+			input := s.Text()
+			r, err := getRuneFromCodepoint(normalizeInput(input), base)
+			die(err, input)
+			print(r)
 		}
 		// Ignoring errors
 	}
